@@ -80,26 +80,28 @@ app.post('/api/v1/footnotes', (request, response) => {
       return response
         .status(422)
         .send({ error: `Expected format: { note: <String>, paper_id: <Integer> }. You're missing a "${requiredParameter}" property.` });
-    } else {
-      // find paper_id in papers db and return error if not found
-      const paperId = parseInt(footnote['paper_id'], 10)
-      console.log(paperId)
-      paperFound = database('papers').where('id', paperId).first();
-      console.log(paperFound)
-
-
     }
   }
-
-  // if paper is found in db, insert footnote into footnotes db
-
-  database('footnotes').insert(footnote, 'id')
-    .then(footnote => {
-      response.status(201).json({id: footnote[0]});
+  // find paper_id in papers db and return error if not found
+  database('papers')
+    .where('id', footnote['paper_id'])
+    .select()
+    .then(papers => {
+      if(papers.length === 0) {
+        return response
+        .status(404)
+        .send({ error: `Could not find paper with id ${footnote['paper_id']}` });
+      } else {
+        // if paper is found in db, insert footnote into footnotes db
+        database('footnotes').insert(footnote, 'id')
+        .then(footnote => {
+          response.status(201).json({id: footnote[0]});
+        })
+        .catch(error => {
+          response.status(500).json({ error });
+        });
+      }
     })
-    .catch(error => {
-      response.status(500).json({ error });
-    });
 });
 
 app.listen(app.get('port'), () => {
