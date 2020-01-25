@@ -54,6 +54,37 @@ app.post('/api/v1/papers', (request, response) => {
     });
 });
 
+app.post('/api/v1/footnotes', (request, response) => {
+  const footnote = request.body;
+  console.log(footnote)
+
+  for (let requiredParameter of ['note', 'paper_id']) {
+    if (!footnote[requiredParameter]) {
+      return response
+        .status(422)
+        .send({ error: `Expected format: { note: <String>, paper_id: <Integer> }. You're missing a "${requiredParameter}" property.` });
+    } else {
+      // find paper_id in papers db and return error if not found
+      const paperId = parseInt(footnote['paper_id'], 10)
+      console.log(paperId)
+      paperFound = database('papers').where('id', paperId).first();
+      console.log(paperFound)
+
+
+    }
+  }
+
+  // if paper is found in db, insert footnote into footnotes db
+
+  database('footnotes').insert(footnote, 'id')
+    .then(footnote => {
+      response.status(201).json({id: footnote[0]});
+    })
+    .catch(error => {
+      response.status(500).json({ error });
+    });
+});
+
 app.listen(app.get('port'), () => {
   console.log(`${app.locals.title} is running on ${app.get('port')}.`)
 })
